@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Jost } from "next/font/google";
-import "./globals.css";
-import Navbar from "./Components/Navbar";
-import Footer from "./Components/Footer";
+import "../globals.css";
+import Navbar from "../Components/Navbar";
+import Footer from "../Components/Footer";
 
 const jost = Jost({ variable: "--font-jost", subsets: ["latin"] });
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: "e-commerce Nike store",
 };
 
-export default function RootLayout({
+export default function MainLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -21,9 +21,9 @@ export default function RootLayout({
       <body
         className={`${jost.variable} antialiased`}
       >
-        {/* <Navbar /> */}
+        <Navbar />
         {children}
-        {/* <Footer /> */}
+        <Footer />
       </body>
     </html>
   );
