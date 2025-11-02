@@ -1,10 +1,47 @@
 "use client";
 
-import React from "react";
-import { Eye, Apple, Globe} from "lucide-react";
+import React, { useState } from "react";
+import { Eye, Apple, Globe } from "lucide-react";
 import Link from "next/link";
+import { authClient } from "@/lib/auth-client"; //import the auth client
+import { redirect } from "next/navigation";
+
 
 const SignupPage = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const { data, error } = await authClient.signUp.email({
+      email: email,
+      password: password, // user password -> min 8 characters by default
+      name: name, // user display name
+      callbackURL: "/sign-in" // A URL to redirect to after the user verifies their email (optional)
+    }, {
+      onRequest: (ctx) => {
+        //show loading
+      },
+      onSuccess: async (ctx) => {
+        //redirect to the dashboard or sign in page
+        await authClient.signOut({
+          fetchOptions: {
+            onSuccess: () => {
+              redirect("/sign-in"); // redirect to login page
+            },
+          },
+        });
+
+      },
+      onError: (ctx) => {
+        // display the error message
+        console.error("Signup error:", ctx.error);
+      },
+    });
+
+  }
+
   return (
     <div className="flex min-h-screen bg-white">
       {/* Left Section */}
@@ -75,12 +112,16 @@ const SignupPage = () => {
             <div className="w-1/5 border-t border-gray-300"></div>
           </div>
 
-          <form className="space-y-4">
+          <form className="space-y-4 "
+            onSubmit={(e) => handleSignup(e)}>
             <div>
               <label className="text-sm font-medium text-gray-700">
                 Full Name
               </label>
               <input
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 type="text"
                 placeholder="Enter your full name"
                 className="mt-1 w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-black"
@@ -92,6 +133,9 @@ const SignupPage = () => {
                 Email
               </label>
               <input
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 type="email"
                 placeholder="johndoe@gmail.com"
                 className="mt-1 w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-black"
@@ -104,6 +148,9 @@ const SignupPage = () => {
               </label>
               <div className="relative mt-1">
                 <input
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   type="password"
                   placeholder="minimum 8 characters"
                   className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-black"
@@ -113,6 +160,7 @@ const SignupPage = () => {
             </div>
 
             <button
+
               type="submit"
               className="w-full bg-black text-white rounded-full py-3 font-medium hover:bg-gray-900 transition"
             >

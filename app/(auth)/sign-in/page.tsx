@@ -1,10 +1,41 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Eye, Apple, Globe } from "lucide-react";
 import Link from "next/link";
+import { authClient } from "@/lib/auth-client"; //import the auth client
+
 
 const SignInPage = () => {
+
+  const [email,setEmail]=useState("")
+  const [password,setPassword]=useState("")
+
+  const handleSignIn=async (e:React.FormEvent<HTMLFormElement>)=>{
+    e.preventDefault();
+    const { data, error } = await authClient.signIn.email({
+        /**
+         * The user email
+         */
+        email,
+        /**
+         * The user password
+         */
+        password,
+        /**
+         * A URL to redirect to after the user verifies their email (optional)
+         */
+        callbackURL: "/",
+        /**
+         * remember the user session after the browser is closed. 
+         * @default true
+         */
+        rememberMe: false
+}, {
+    //callbacks
+})
+  }
+
   return (
     <div className="flex min-h-screen bg-white">
       {/* LEFT SECTION */}
@@ -80,11 +111,15 @@ const SignInPage = () => {
           </div>
 
           {/* Form */}
-          <form className="space-y-4">
+          <form className="space-y-4" 
+          onSubmit={(e)=>handleSignIn(e)}>
             <div>
               <label className="text-sm font-medium text-gray-700">Email</label>
               <input
+              required
                 type="email"
+                value={email}
+                onChange={(e)=>{setEmail(e.target.value)}}
                 placeholder="johndoe@gmail.com"
                 className="mt-1 w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-black"
               />
@@ -96,7 +131,10 @@ const SignInPage = () => {
               </label>
               <div className="relative mt-1">
                 <input
+                required
                   type="password"
+                  value={password}
+                  onChange={(e)=>{setPassword(e.target.value)}}
                   placeholder="minimum 8 characters"
                   className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-black"
                 />
