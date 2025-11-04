@@ -155,7 +155,7 @@ const SignInPage = () => {
             {/* Sign in button */}
             <button
               type="submit"
-              className="w-full bg-black text-white rounded-full py-3 font-medium hover:bg-gray-900 transition"
+              className="w-full bg-black text-white rounded-full py-3 font-medium hover:bg-gray-900 transition cursor-pointer"
             >
               Sign In
             </button>
