@@ -1,6 +1,6 @@
 
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, integer,jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, integer,jsonb,pgEnum } from "drizzle-orm/pg-core";
 import { uuid } from "drizzle-orm/pg-core/columns/uuid";
 
 export const user = pgTable("user", {
@@ -64,11 +64,12 @@ export const verification = pgTable("verification", {
 });
 
 
+
 export const carts = pgTable(
   "carts",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }).unique(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -76,12 +77,37 @@ export const carts = pgTable(
       .notNull(),
   }
 );
+
+
+export const productVariants = pgTable(
+  "product_variants",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    productId: uuid("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+    sku: text("sku").notNull().unique(),
+    price: integer("price").notNull(),
+    salePrice: integer("sale_price"),
+    colorId: uuid("color_id").notNull().references(() => colors.id, { onDelete: "cascade" }),
+    sizeId: uuid("size_id").notNull().references(() => sizes.id, { onDelete: "cascade" }),
+    stockQuantity: integer("stock_quantity").notNull(),
+    weight: integer("weight"),
+    dimensions: jsonb("dimensions"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  }
+);
+
+
+
 export const cartItems = pgTable(
   "cart_items",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     cartId: uuid("cart_id").notNull().references(() => carts.id, { onDelete: "cascade" }),
-    productId: uuid("product_id").notNull(),
+    productVariantId: uuid("product_variant_id").notNull().references(() => productVariants.id, { onDelete: "cascade" }),
     quantity: integer("quantity").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -144,12 +170,13 @@ export const brands = pgTable(
   }
 );
 
+export const genderEnum = pgEnum("gender_enum", ["male", "female", "unisex"]);
 
 export const genders = pgTable(
   "genders",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    label: text("label").notNull(),
+    label: genderEnum("label").notNull(),
     slug: text("slug").notNull().unique(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -203,6 +230,156 @@ export const categories = pgTable(
   }
 );
 
+
+
+
+export const productImages = pgTable(
+  "product_images",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    productId: uuid("product_id").references(() => products.id, { onDelete: "cascade" }),
+    variantId: uuid("variant_id").references(() => productVariants.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  }
+);
+
+
+
+// Relations
+
+export const cartRelations = relations(carts, ({ one,many }) => ({
+  user: one(user, {
+    fields: [carts.userId],
+    references: [user.id],
+  }),
+  cartItems: many(cartItems, {
+    relationName: "cart_cartItems",
+  }),
+}));
+
+export const userRelations = relations(user, ({ one,many }) => ({
+  cart: one(carts, {
+    fields: [user.id],
+    references: [carts.userId],
+  }),
+  addresses: many(addresses, {
+    relationName: "user_addresses",
+  }),
+}));
+
+export const addressesRelations = relations(addresses, ({ one }) => ({
+  user: one(user, {
+    fields: [addresses.userId],
+    references: [user.id],
+  }),
+}));
+
+
+const cartItemsRelations = relations(cartItems, ({ one }) => ({
+  cart: one(carts, {
+    fields: [cartItems.cartId],
+    references: [carts.id],
+  }),
+  productVariant: one(productVariants, {
+  fields: [cartItems.productVariantId],
+  references: [productVariants.id],
+}),
+
+}));
+
+
+export const productVariantsRelations = relations(productVariants, ({ one,many }) => ({
+  product: one(products, {
+    fields: [productVariants.productId],
+    references: [products.id],
+  }),
+  colors: one(colors, {
+    fields: [productVariants.colorId],
+    references: [colors.id],
+  }),
+  sizes: one(sizes, {
+    fields: [productVariants.sizeId],
+    references: [sizes.id],
+  }),
+  productImages: many(productImages, {
+    relationName: "productVariant_productImages",
+  }),
+  cartItems:many(cartItems, {
+    relationName: "cartItem_productVariants", 
+  }),
+}));
+
+
+export const colorsRelations = relations(colors, ({ many }) => ({
+  productVariants: many(productVariants, {
+    relationName: "color_productVariants",
+  }),
+}));
+
+export const sizesRelations = relations(sizes, ({ many }) => ({
+  productVariants: many(productVariants, {
+    relationName: "size_productVariants",
+  }),
+}));
+
+
+export const productRelations = relations(products, ({ one,many }) => ({
+  brand: one(brands, {
+    fields: [products.brandid],
+    references: [brands.id],
+  }),
+  category: one(categories, {
+    fields: [products.categoryid],
+    references: [categories.id],
+  }),
+  gender: one(genders, {
+    fields: [products.genderid],
+    references: [genders.id],
+  }),
+  productVariants: many(productVariants, {
+    relationName: "product_productVariants",
+  }),
+  productImages: one(productImages, {
+    fields: [products.id],
+    references: [productImages.productId],
+  }),
+}));
+
+
+export const brandsRelations = relations(brands, ({ many }) => ({
+  products: many(products, {
+    relationName: "brand_products",
+  }),
+}));
+
+export const gendersRelations = relations(genders, ({ many }) => ({
+  products: many(products, {
+    relationName: "gender_products",
+  }),
+}));
+
+export const categoriesRelations2 = relations(categories, ({ many }) => ({
+  products: many(products, {
+    relationName: "category_products",
+  }),
+}));
+
+export const productImagesRelations = relations(productImages, ({ one }) => ({
+  product: one(products, {
+    fields: [productImages.productId],
+    references: [products.id],
+  }),
+  productVariant: one(productVariants, {
+    fields: [productImages.variantId],
+    references: [productVariants.id],
+  }),
+}));
+
 export const categoriesrelations = relations(categories, ({one, many }) => ({
   parentCategory: one(categories, {
     fields: [categories.parentCategoryId],
@@ -213,39 +390,3 @@ export const categoriesrelations = relations(categories, ({one, many }) => ({
     relationName: "parentCategory",
   }),
 }));
-
-export const productVariants = pgTable(
-  "product_variants",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    productId: uuid("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
-    sku: text("sku").notNull().unique(),
-    price: integer("price").notNull(),
-    salePrice: integer("sale_price"),
-    colorId: uuid("color_id").notNull().references(() => colors.id, { onDelete: "cascade" }),
-    sizeId: uuid("size_id").notNull().references(() => sizes.id, { onDelete: "cascade" }),
-    stockQuantity: integer("stock_quantity").notNull(),
-    weight: integer("weight"),
-    dimensions: jsonb("dimensions").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
-      .defaultNow()
-      .$onUpdate(() => /* @__PURE__ */ new Date())
-      .notNull(),
-  }
-);
-
-export const productImages = pgTable(
-  "product_images",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    productId: uuid("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
-    variantId: uuid("variant_id").notNull().references(() => productVariants.id, { onDelete: "cascade" }),
-    url: text("url").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
-      .defaultNow()
-      .$onUpdate(() => /* @__PURE__ */ new Date())
-      .notNull(),
-  }
-);
