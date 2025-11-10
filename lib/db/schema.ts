@@ -341,13 +341,8 @@ export const productRelations = relations(products, ({ one,many }) => ({
     fields: [products.genderid],
     references: [genders.id],
   }),
-  productVariants: many(productVariants, {
-    relationName: "product_productVariants",
-  }),
-  productImages: one(productImages, {
-    fields: [products.id],
-    references: [productImages.productId],
-  }),
+  productVariants: many(productVariants),
+  productImages: many(productImages)
 }));
 
 

@@ -21,7 +21,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   badge,
 }) => {
   return (
-    <div className="max-w-xs w-2xs rounded-md bg-white shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300  relative cursor-pointer ">
+    <div className="max-w-xs w-2xs h-[50vh] rounded-md bg-white shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300  relative cursor-pointer ">
       {/* Badge */}
       {badge && (
         <span className="absolute z-40 bg-red-100   text-red-600 font-semibold text-xs px-3 py-1 rounded-full top-3 left-3">
@@ -44,7 +44,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       <div className="p-4 flex flex-col gap-1 z-50  ">
         <div className="flex justify-between items-start">
           <h3 className="text-gray-900 font-semibold text-sm">{title}</h3>
-          <p className="text-gray-900 font-semibold">${price.toFixed(2)}</p>
+          <p className="text-gray-900 font-semibold">₹{price.toFixed(2)}</p>
         </div>
 
         <p className="text-gray-500 text-sm">{category}</p>

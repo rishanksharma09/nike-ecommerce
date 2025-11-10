@@ -1,7 +1,5 @@
-// scripts/seed.ts
-import { db } from "./db"; // your drizzle db instance
+import { db } from "./db";
 import {
-  user,
   brands,
   genders,
   colors,
@@ -10,17 +8,13 @@ import {
   products,
   productVariants,
   productImages,
-  carts,
-  cartItems,
-  addresses,
 } from "./schema";
-import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
 async function seed() {
-  console.log("🌱 Starting database seed...");
+  console.log("🌱 Starting product seeding...");
 
-  // Base tables
+  // 1️⃣ Base Data
   const brandIds = await db
     .insert(brands)
     .values([
@@ -28,7 +22,7 @@ async function seed() {
       { id: uuidv4(), name: "Adidas", slug: "adidas" },
       { id: uuidv4(), name: "Puma", slug: "puma" },
     ])
-    .returning({ id: brands.id });
+    .returning({ id: brands.id, name: brands.name });
 
   const genderIds = await db
     .insert(genders)
@@ -37,7 +31,7 @@ async function seed() {
       { id: uuidv4(), label: "female", slug: "female" },
       { id: uuidv4(), label: "unisex", slug: "unisex" },
     ])
-    .returning({ id: genders.id });
+    .returning({ id: genders.id, label: genders.label });
 
   const colorIds = await db
     .insert(colors)
@@ -45,17 +39,21 @@ async function seed() {
       { id: uuidv4(), name: "Black", slug: "black", hexCode: "#000000" },
       { id: uuidv4(), name: "White", slug: "white", hexCode: "#FFFFFF" },
       { id: uuidv4(), name: "Red", slug: "red", hexCode: "#FF0000" },
+      { id: uuidv4(), name: "Blue", slug: "blue", hexCode: "#0000FF" },
+      { id: uuidv4(), name: "Grey", slug: "grey", hexCode: "#808080" },
     ])
-    .returning({ id: colors.id });
+    .returning({ id: colors.id, name: colors.name });
 
   const sizeIds = await db
     .insert(sizes)
     .values([
-      { id: uuidv4(), name: "UK-7", slug: "UK-7", sort_order: 1 },
-      { id: uuidv4(), name: "UK-8", slug: "UK-8", sort_order: 2 },
-      { id: uuidv4(), name: "UK-9", slug: "UK-9", sort_order: 3 },
+      { id: uuidv4(), name: "UK-6", slug: "UK-6", sort_order: 1 },
+      { id: uuidv4(), name: "UK-7", slug: "UK-7", sort_order: 2 },
+      { id: uuidv4(), name: "UK-8", slug: "UK-8", sort_order: 3 },
+      { id: uuidv4(), name: "UK-9", slug: "UK-9", sort_order: 4 },
+      { id: uuidv4(), name: "UK-10", slug: "UK-10", sort_order: 5 },
     ])
-    .returning({ id: sizes.id });
+    .returning({ id: sizes.id, name: sizes.name });
 
   const categoryIds = await db
     .insert(categories)
@@ -64,115 +62,132 @@ async function seed() {
       { id: uuidv4(), name: "Women", slug: "women" },
       { id: uuidv4(), name: "Shoes", slug: "shoes" },
     ])
-    .returning({ id: categories.id });
+    .returning({ id: categories.id, name: categories.name });
 
-//   // 2️⃣ One test user
-//   const [newUser] = await db
-//     .insert(user)
-//     .values({
-//       id: uuidv4(),
-//       name: "Rishank",
-//       email: "rishank@example.com",
-//       emailVerified: true,
-//     })
-//     .returning({ id: user.id });
-
-  // 3️⃣ Example products
-  const [nikeProduct] = await db
-    .insert(products)
-    .values({
-      id: uuidv4(),
-      name: "Nike Air Zoom",
-      description: "High performance running shoes",
-      categoryid: categoryIds[2].id, // Shoes
-      genderid: genderIds[0].id, // Male
-      brandid: brandIds[0].id, // Nike
-      is_published: true,
-    })
-    .returning({ id: products.id });
-
-  const [adidasProduct] = await db
-    .insert(products)
-    .values({
-      id: uuidv4(),
-      name: "Adidas Ultraboost",
-      description: "Comfort and style for everyday wear",
-      categoryid: categoryIds[2].id,
-      genderid: genderIds[2].id,
-      brandid: brandIds[1].id,
-      is_published: true,
-    })
-    .returning({ id: products.id });
-
-  // 4️⃣ Product Variants
-  const nikeVariants = await db
-    .insert(productVariants)
-    .values([
-      {
-        id: uuidv4(),
-        productId: nikeProduct.id,
-        sku: "NIKE-AIR-BLACK-UK8",
-        price: 12000,
-        salePrice: 9999,
-        colorId: colorIds[0].id,
-        sizeId: sizeIds[1].id,
-        stockQuantity: 50,
-      },
-      {
-        id: uuidv4(),
-        productId: nikeProduct.id,
-        sku: "NIKE-AIR-RED-UK7",
-        price: 12000,
-        colorId: colorIds[2].id,
-        sizeId: sizeIds[0].id,
-        stockQuantity: 30,
-      },
-    ])
-    .returning({ id: productVariants.id });
-
-  // 5️⃣ Product Images
-  await db.insert(productImages).values([
+  // 2️⃣ Generate multiple products
+  const productList = [
     {
-      id: uuidv4(),
-      productId: nikeProduct.id,
-      variantId: nikeVariants[0].id,
-      url: "public/shoes/shoe-4.webp",
+      name: "Nike Air Zoom Pegasus 40",
+      description: "Lightweight running shoes designed for speed and comfort.",
+      brand: "Nike",
+      gender: "male",
+      category: "Shoes",
+      price: 11999,
+      images: ["/shoes/shoe-1.webp", "/shoes/shoe-2.webp"],
     },
     {
-      id: uuidv4(),
-      productId: adidasProduct.id,
-      url: "public/shoes/shoe-3.webp",
+      name: "Adidas Ultraboost 23",
+      description: "Energy-returning cushioning for all-day wear.",
+      brand: "Adidas",
+      gender: "unisex",
+      category: "Shoes",
+      price: 13999,
+      images: ["/shoes/shoe-3.webp", "/shoes/shoe-4.webp"],
     },
-  ]);
+    {
+      name: "Puma Velocity Nitro 2",
+      description: "Performance running shoe with superior cushioning.",
+      brand: "Puma",
+      gender: "female",
+      category: "Shoes",
+      price: 9999,
+      images: ["/shoes/shoe-5.avif", "/shoes/shoe-6.avif"],
+    },
+    {
+      name: "Nike Air Max 270",
+      description: "Signature Air unit for next-level comfort.",
+      brand: "Nike",
+      gender: "male",
+      category: "Shoes",
+      price: 12999,
+      images: ["/shoes/shoe-7.avif"],
+    },
+    {
+      name: "Adidas NMD_R1",
+      description: "Modern streetwear sneaker with Boost midsole.",
+      brand: "Adidas",
+      gender: "unisex",
+      category: "Shoes",
+      price: 11499,
+      images: ["/shoes/shoe-8.avif"],
+    },
+    {
+      name: "Puma RS-X Reinvention",
+      description: "Bold retro-futuristic style with chunky sole.",
+      brand: "Puma",
+      gender: "male",
+      category: "Shoes",
+      price: 8999,
+      images: ["/shoes/shoe-9.avif"],
+    },
+    {
+      name: "Nike Revolution 6",
+      description: "Simple and comfortable everyday running shoe.",
+      brand: "Nike",
+      gender: "female",
+      category: "Shoes",
+      price: 7499,
+      images: ["/shoes/shoe-10.avif"],
+    },
+  ];
 
-  // 6️⃣ Create cart for user
-//   const [cart] = await db
-//     .insert(carts)
-//     .values({ id: uuidv4(), userId: newUser.id })
-//     .returning({ id: carts.id });
+  const createdProducts = [];
+  for (const product of productList) {
+    const brand = brandIds.find((b) => b.name === product.brand)!;
+    const gender = genderIds.find((g) => g.label === product.gender)!;
+    const category = categoryIds.find((c) => c.name === product.category)!;
 
-//   // 7️⃣ Add item to cart
-//   await db.insert(cartItems).values({
-//     id: uuidv4(),
-//     cartId: cart.id,
-//     productVariantId: nikeVariants[0].id,
-//     quantity: 2,
-//   });
+    const [createdProduct] = await db
+      .insert(products)
+      .values({
+        id: uuidv4(),
+        name: product.name,
+        description: product.description,
+        categoryid: category.id,
+        genderid: gender.id,
+        brandid: brand.id,
+        is_published: true,
+      })
+      .returning({ id: products.id });
 
-//   // 8️⃣ Add address
-//   await db.insert(addresses).values({
-//     id: uuidv4(),
-//     userId: newUser.id,
-//     line1: "123 Main St",
-//     line2: "Near Mall Road",
-//     city: "Amritsar",
-//     state: "Punjab",
-//     country: "India",
-//     zip: "143001",
-//     isDefault: true,
-//   });
+    createdProducts.push(createdProduct);
 
-  console.log("✅ Database seeding completed successfully!");
+    // Add Images
+    await db.insert(productImages).values(
+      product.images.map((url) => ({
+        id: uuidv4(),
+        productId: createdProduct.id,
+        url,
+      }))
+    );
+
+    // Add Variants
+    const colorSubset = colorIds.slice(0, 3);
+    const sizeSubset = sizeIds.slice(0, 3);
+
+    const variantValues = [];
+    for (const color of colorSubset) {
+      for (const size of sizeSubset) {
+        variantValues.push({
+          id: uuidv4(),
+          productId: createdProduct.id,
+          sku: `${product.brand.toUpperCase()}-${product.name
+            .split(" ")
+            .join("-")
+            .toUpperCase()}-${color.name.toUpperCase()}-${size.name}`,
+          price: product.price,
+          salePrice: product.price - 1000,
+          colorId: color.id,
+          sizeId: size.id,
+          stockQuantity: Math.floor(Math.random() * 50) + 10,
+        });
+      }
+    }
+
+    await db.insert(productVariants).values(variantValues);
+  }
+
+  console.log(`✅ Seeded ${createdProducts.length} products successfully!`);
 }
 
 seed()
