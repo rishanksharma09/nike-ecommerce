@@ -7,7 +7,7 @@ const ProductListing = ({productRows}:{productRows:any[]}) => {
     const router=useRouter();
     
     const handleProductSelection=(id:string)=>{
-        router.push(`/products/${id}`)
+        router.push(`/products/${id}/null/null`)
     }
   return (
     <main className="min-h-screen flex bg-white text-neutral-900">

@@ -8,14 +8,34 @@ import { error } from "console";
 import { eq } from "drizzle-orm";
 
 
-export async function getProductFromID(productId:string){
-    try{
-        const [productInfo]= await db.select()
+
+export async function getProductVariants(productId:string){
+  try{
+    const [productInfo]= await db.select()
       .from(productsTable)
       .where(eq(productsTable.id, productId));
-      return productInfo;
+
+    if(!productInfo){
+      return null;
     }
-    catch{
-        throw error;
-    }
+
+    const productVariants = await db.query.productVariants.findMany({
+      with: {
+        productImages: {
+          columns: { id: true, url: true },
+        },
+        colors: {
+          columns: { id: true, name: true },
+        },
+        sizes:{
+          columns:{id:true, name:true},
+        }
+      },
+      where: (productVariants, { eq }) => eq(productVariants.productId,productId),
+    });
+    return {productInfo, productVariants}
+  }
+  catch(err){
+    throw err;
+  }
 }

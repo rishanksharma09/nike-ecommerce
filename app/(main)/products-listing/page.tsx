@@ -1,6 +1,3 @@
-// app/page.tsx
-
-
 
 import { getProductListingDataWithColorLength} from "@/app/actions/product-listing-data";
 
